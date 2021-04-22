@@ -4,7 +4,8 @@ const { buildSchema } = require('graphql');
 
 // _______________A marquer dans GraphiQl (j'suis sympa)
 
-// ______________// QUERY
+// ______________________________________________ Recherche un cours qui contient une string
+// ______________QUERY
 // query searchTitle($searchString: String!) {
 //   searchTitle(search: $searchString) {
 //     title
@@ -13,12 +14,32 @@ const { buildSchema } = require('graphql');
 //     topic
 //     url
 //   }
-
 // }
 
-// ________________// QUERY VARIABLES
+// ________________QUERY VARIABLES
 // {
 //   "searchString":""
+// }
+
+// ______________________________________________ Poste un cours
+// ______________MUTATION
+// mutation postCourse($title: String!, $author: String, $description: String, $topic: String, $url: String) {
+//   postCourse(title: $title, author: $author, description: $description, topic:$topic, url:$url) {
+//     title
+//     author
+//     description
+//     topic
+//     url
+//   }
+//   }
+
+// ________________QUERY VARIABLES
+// {
+//   "title":"GrapQl pour les nuls",
+//   "author":"Nico",
+//   "description":"Apprends graphQL dans la douleur",
+//   "topic":"Node.s",
+//   "url":""
 // }
 
 // GraphQL schema
@@ -31,6 +52,8 @@ const schema = buildSchema(`
     },
     type Mutation {
       updateCourseTopic(id: Int!, topic: String!): Course
+      postCourse(title: String!, author: String, description: String, topic: String, url: String): [Course]
+
   }
     type Course {
         id: Int
@@ -41,6 +64,16 @@ const schema = buildSchema(`
         url: String
     }
 `);
+
+type Course = {
+  id: number;
+  title: string;
+  author: string;
+  description: string;
+  topic: string;
+  url: string;
+  search: string;
+};
 
 const coursesData = [
   {
@@ -72,21 +105,21 @@ const coursesData = [
   },
 ];
 
-const getCoursesByString = function (args: any) {
+const getCoursesByString = function (args: Course) {
   const stringToSearch = args.search;
   return coursesData.filter((course) => {
     return course.title.includes(stringToSearch);
   });
 };
 
-const getCourse = function (args: any) {
+const getCourse = function (args: Course) {
   const id = args.id;
   return coursesData.filter((course) => {
     return course.id == id;
   })[0];
 };
 
-const getCourses = function (args: any) {
+const getCourses = function (args: Course) {
   if (args.topic) {
     const topic = args.topic;
     return coursesData.filter((course) => course.topic === topic);
@@ -95,7 +128,7 @@ const getCourses = function (args: any) {
   }
 };
 
-var updateCourseTopic = function ({ id, topic }: any) {
+const updateCourseTopic = function ({ id, topic }: Course) {
   coursesData.map((course) => {
     if (course.id === id) {
       course.topic = topic;
@@ -105,11 +138,31 @@ var updateCourseTopic = function ({ id, topic }: any) {
   return coursesData.filter((course) => course.id === id)[0];
 };
 
+const postCourse = function ({
+  title,
+  author,
+  description,
+  topic,
+  url,
+}: Course) {
+  const newCourse = {
+    id: coursesData.length,
+    title: title,
+    author: author,
+    description: description,
+    topic: topic,
+    url: url,
+  };
+  coursesData.push(newCourse);
+  return coursesData;
+};
+
 const root = {
   course: getCourse,
   courses: getCourses,
   searchTitle: getCoursesByString,
   updateCourseTopic: updateCourseTopic,
+  postCourse: postCourse,
 };
 
 // Create an express server and a GraphQL endpoint
